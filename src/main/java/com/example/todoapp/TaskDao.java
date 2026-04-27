@@ -3,6 +3,10 @@ package com.example.todoapp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
+import java.util.Collection;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 /**
  * Data Access Object for {@link Task} model.
@@ -35,13 +39,14 @@ public class TaskDao {
     public Optional<Task> findById(int id) {
         return Optional.ofNullable(storage.get(id));
     }
-/*
+
     public List<Task> findAll(boolean todoOnly) {
         Collection<Task> tasks = storage.values();
         if (todoOnly) {
             return tasks.stream().filter(t -> !t.done()).collect(Collectors.toList());
         }
-        return tasks.stream().collect(Collectors.toList());
+        return new ArrayList<>(tasks);
     }
-*/
+
+
 }

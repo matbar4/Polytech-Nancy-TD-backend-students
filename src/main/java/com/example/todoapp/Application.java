@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
@@ -38,9 +39,10 @@ public class Application {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        /*
-        if ("GET".equals(method) && "/tasks".equals(path)){
 
+        if ("GET".equals(method) && "/tasks".equals(path)) {
+            String query = exchange.getRequestURI().getQuery(); // ex: "todo-only=true"
+            boolean todoOnly = query != null && query.contains("todo-only=true");
 
             List<Task> tasks = dao.findAll(todoOnly);
 
@@ -52,7 +54,6 @@ public class Application {
             return;
         }
 
-         */
 
 
         //region Manage POST /tasks
