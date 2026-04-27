@@ -41,7 +41,7 @@ public class Application {
 
 
         if ("GET".equals(method) && "/tasks".equals(path)) {
-            String query = exchange.getRequestURI().getQuery(); // ex: "todo-only=true"
+            String query = exchange.getRequestURI().getQuery();
             boolean todoOnly = query != null && query.contains("todo-only=true");
 
             List<Task> tasks = dao.findAll(todoOnly);
