@@ -40,6 +40,11 @@ public class TaskDao {
         return Optional.ofNullable(storage.get(id));
     }
 
+    /**
+     * Retrieve all tasks
+     * @param todoOnly if true, only not yet done tasks
+     * @return list of tasks
+     */
     public List<Task> findAll(boolean todoOnly) {
         Collection<Task> tasks = storage.values();
         if (todoOnly) {
@@ -47,6 +52,7 @@ public class TaskDao {
         }
         return new ArrayList<>(tasks);
     }
+
 
 
 }

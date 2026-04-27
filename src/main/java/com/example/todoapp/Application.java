@@ -39,7 +39,7 @@ public class Application {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-
+        //region Manage GET /tasks
         if ("GET".equals(method) && "/tasks".equals(path)) {
             String query = exchange.getRequestURI().getQuery();
             boolean todoOnly = query != null && query.contains("todo-only=true");
@@ -53,7 +53,7 @@ public class Application {
             }
             return;
         }
-
+        //endregion
 
 
         //region Manage POST /tasks
