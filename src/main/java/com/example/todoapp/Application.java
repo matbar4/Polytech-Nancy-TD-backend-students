@@ -38,6 +38,23 @@ public class Application {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
+        /*
+        if ("GET".equals(method) && "/tasks".equals(path)){
+
+
+            List<Task> tasks = dao.findAll(todoOnly);
+
+            if (tasks.isEmpty()) {
+                sendResponse(exchange, 204, null);
+            } else {
+                sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+            }
+            return;
+        }
+
+         */
+
+
         //region Manage POST /tasks
         if ("POST".equals(method) && "/tasks".equals(path)) {
             Task input = JsonUtils.deserialize(new String(exchange.getRequestBody().readAllBytes(), UTF_8), Task.class);

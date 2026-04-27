@@ -35,4 +35,13 @@ public class TaskDao {
     public Optional<Task> findById(int id) {
         return Optional.ofNullable(storage.get(id));
     }
+/*
+    public List<Task> findAll(boolean todoOnly) {
+        Collection<Task> tasks = storage.values();
+        if (todoOnly) {
+            return tasks.stream().filter(t -> !t.done()).collect(Collectors.toList());
+        }
+        return tasks.stream().collect(Collectors.toList());
+    }
+*/
 }
