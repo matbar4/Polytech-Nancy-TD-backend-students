@@ -127,6 +127,28 @@
           "variable": []
         }
       }
+    },
+    {
+      "name": "DELETE /tasks/1",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "/tasks/1",
+          "protocol": "",
+          "host": [],
+          "path": [
+            "tasks",
+            "1"
+          ],
+          "query": [],
+          "variable": []
+        }
+      }
     }
   ],
   "variable": [

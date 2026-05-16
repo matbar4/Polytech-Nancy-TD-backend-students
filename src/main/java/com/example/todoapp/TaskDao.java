@@ -31,6 +31,10 @@ public class TaskDao {
         return task;
     }
 
+    public boolean deleteById(int id) {
+        return storage.remove(id) != null;
+    }
+
     /**
      * Retrieve {@link Task} model by id.
      * @param id identifier of the {@link Task}.

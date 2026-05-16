@@ -39,22 +39,6 @@ public class Application {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        //region Manage GET /tasks
-        if ("GET".equals(method) && "/tasks".equals(path)) {
-            String query = exchange.getRequestURI().getQuery();
-            boolean todoOnly = query != null && query.contains("todo-only=true");
-
-            List<Task> tasks = dao.findAll(todoOnly);
-
-            if (tasks.isEmpty()) {
-                sendResponse(exchange, 204, null);
-            } else {
-                sendResponse(exchange, 200, JsonUtils.serialize(tasks));
-            }
-            return;
-        }
-        //endregion
-
 
         //region Manage POST /tasks
         if ("POST".equals(method) && "/tasks".equals(path)) {
@@ -81,6 +65,42 @@ public class Application {
             return;
         }
         //endregion
+
+        //region Manage GET /tasks
+        if ("GET".equals(method) && "/tasks".equals(path)) {
+            String query = exchange.getRequestURI().getQuery();
+            boolean todoOnly = query != null && query.contains("todo-only=true");
+
+            List<Task> tasks = dao.findAll(todoOnly);
+
+            if (tasks.isEmpty()) {
+                sendResponse(exchange, 204, null);
+            } else {
+                sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+            }
+            return;
+        }
+        //endregion
+
+        //region Manage DELETE /tasks/{id}
+        if ("DELETE".equals(method) && m.matches()) {
+            int id = Integer.parseInt(m.group(1));
+
+            boolean deleted = dao.deleteById(id);
+
+            if (deleted) {
+                sendResponse(exchange, 204, null);
+            } else {
+                sendResponse(exchange, 404, null);
+            }
+            return;
+        }
+        //endregion
+
+        //region Manage PUT /tasks/{id}
+
+        //endregion
+
 
         // Otherwise → 404
         sendResponse(exchange, 404, null);
