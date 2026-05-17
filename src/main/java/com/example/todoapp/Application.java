@@ -98,7 +98,19 @@ public class Application {
         //endregion
 
         //region Manage PUT /tasks/{id}
+        if ("PUT".equals(method) && m.matches()){
+            int id = Integer.parseInt(m.group(1));
+            Task input = JsonUtils.deserialize(new String(exchange.getRequestBody().readAllBytes(), UTF_8), Task.class);
 
+            boolean updated = dao.update(id, input);
+
+            if (updated) {
+                sendResponse(exchange, 204, null);
+            } else {
+                sendResponse(exchange, 404, null);
+            }
+            return;
+        }
         //endregion
 
 

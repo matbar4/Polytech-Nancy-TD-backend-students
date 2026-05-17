@@ -31,6 +31,11 @@ public class TaskDao {
         return task;
     }
 
+    /**
+     * Delete {@link Task} model by id.
+     * @param id identifier of the {@link Task}.
+     * @return True if task existed
+     */
     public boolean deleteById(int id) {
         return storage.remove(id) != null;
     }
@@ -57,6 +62,20 @@ public class TaskDao {
         return new ArrayList<>(tasks);
     }
 
+    /**
+     * Update {@link Task} model by id
+     * @param id of existing Task
+     * @return modified Task model or
+     */
+    public boolean update(int id, Task updatedTask) {
+        if (!storage.containsKey(id)) {
+            return false;
+        }
+
+        Task taskToSave = new Task(id, updatedTask.title(), updatedTask.description(), updatedTask.done());
+        storage.put(id, taskToSave);
+        return true;
+    }
 
 
 }
