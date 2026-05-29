@@ -1,4 +1,6 @@
-package com.example.todoapp;
+package com.example.todoapp.persistence;
+
+import com.example.todoapp.model.Task;
 
 import java.util.HashMap;
 import java.util.Map;
