@@ -23,7 +23,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/Task'
+                            $ref: '#/components/schemas/TaskCreate'
             responses:
                 '201':
                     description: Tâche créée avec succès
@@ -36,7 +36,14 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/Task'
+                                $ref: '#/components/schemas/TaskResponse'
+                '400':
+                    description: Paramètres invalides
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+
 
         get:
             tags: [tasks]
@@ -58,7 +65,7 @@ paths:
                             schema:
                                 type: array
                                 items:
-                                    $ref: '#/components/schemas/Task'
+                                    $ref: '#/components/schemas/TaskResponse'
                 '204':
                     description: Aucune tâche
 
@@ -83,7 +90,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/Task'
+                                $ref: '#/components/schemas/TaskResponse'
                 '404':
                     description: Tâche non trouvée
 
@@ -96,26 +103,33 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/Task'
+                            $ref: '#/components/schemas/TaskUpdate'
             responses:
                 '204':
                     description: Tâche mise à jour
+                '400':
+                    description: Paramètres invalides
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+
                 '404':
                     description: Tâche non trouvée
 
-            delete:
-                tags: [ tasks ]
-                summary: Supprimer une tâche
-                operationId: deleteTask
-                responses:
-                    '204':
-                        description: Tâche supprimée
-                    '404':
-                        description: Tâche non trouvée
+        delete:
+            tags: [ tasks ]
+            summary: Supprimer une tâche
+            operationId: deleteTask
+            responses:
+                '204':
+                    description: Tâche supprimée
+                '404':
+                    description: Tâche non trouvée
 
 components:
     schemas:
-        Task:
+        TaskResponse:
             type: object
             description: Représentation d'une tâche
             properties:
@@ -137,3 +151,58 @@ components:
             required:
                 - id
                 - title
+
+        TaskCreate:
+            type: object
+            description: Données pour la création d'une tâche
+            properties:
+                title:
+                    type: string
+                    nullable: false
+                    maxLength: 50
+                    example: Acheter du lait
+                description:
+                    type: string
+                    nullable: true
+                    maxLength: 255
+                    example: 2L demi-écrémé
+            required:
+                - title
+
+        TaskUpdate:
+            type: object
+            description: Données pour la modification d'une tâche
+            properties:
+                title:
+                    type: string
+                    nullable: false
+                    maxLength: 50
+                    example: Acheter du lait
+                description:
+                    type: string
+                    nullable: true
+                    maxLength: 255
+                    example: 2L demi-écrémé
+                done:
+                    type: boolean
+                    nullable: false
+                    example: true
+            required:
+                - title
+                - done
+
+
+
+        Error:
+            type: object
+            description: Erreur de validation retournée avec un code 400
+            properties:
+                field:
+                    type: string
+                    example: title
+                message:
+                    type: string
+                    example: Title is required
+            required:
+                - field
+                - message
