@@ -1,6 +1,8 @@
 package com.example.todoapp.persistence;
 
 import com.example.todoapp.model.Task;
+import com.example.todoapp.model.dto.TaskCreateDto;
+import com.example.todoapp.model.dto.TaskUpdateDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +18,6 @@ import java.util.ArrayList;
 public class TaskDao {
 
     private static final Logger log = LoggerFactory.getLogger(TaskDao.class);
-
     private static final String dbUrl = "jdbc:sqlite:DatabaseTask.db";
 
     public TaskDao() {
@@ -25,13 +26,17 @@ public class TaskDao {
 
 
 
+    /**
+     * Creates the tasks table if it doesn't exist yet
+     */
+
     private void initDatabase() {
         String sql = """
                 CREATE TABLE IF NOT EXISTS tasks (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     description TEXT NOT NULL,
-                    done BOOLEAN NOT NULL
+                    done BOOLEAN NOT NULL DEFAULT 0
                 )
                 """;
         try (Connection conn = getConnection()){
@@ -55,6 +60,13 @@ public class TaskDao {
         return DriverManager.getConnection(dbUrl);
     }
 
+    /**
+     * Maps the current row of a {@link ResultSet} to a {@link Task}.
+     * @param rs ResultSet positioned on a row.
+     * @return {@link Task} built from the row.
+     * @throws SQLException if a column cannot be read.
+     */
+
     private Task mapRow(ResultSet rs) throws SQLException {
         return new Task(
                 rs.getInt("id"),
@@ -67,23 +79,22 @@ public class TaskDao {
 
     /**
      * Persist {@link Task} model.
-     * @param task task to save.
+     * @param dto task to save.
      * @return task model.
      */
-    public Task save(Task task) {
-        String sql = "INSERT INTO tasks (title, description, done) VALUES (?, ?, ?)";
+    public Task save(TaskCreateDto dto) {
+        String sql = "INSERT INTO tasks (title, description, done) VALUES (?, ?, 0)";
 
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setString(1, task.title());
-            stmt.setString(2, task.description());
-            stmt.setBoolean(3, task.done());
+            stmt.setString(1, dto.title());
+            stmt.setString(2, dto.description());
             stmt.executeUpdate();
 
             ResultSet generatedKeys = stmt.getGeneratedKeys();
             int generatedId = generatedKeys.getInt(1);
 
             log.info("Task saved with id: " + generatedId);
-            return new Task(generatedId, task.title(), task.description(), task.done());
+            return new Task(generatedId, dto.title(), dto.description(), false);
 
         } catch (SQLException e) {
             log.error("Failed to save task", e);
@@ -150,6 +161,7 @@ public class TaskDao {
             while (rs.next()){
                 tasks.add(mapRow(rs));
             } return tasks;
+
         } catch (SQLException e){
             log.error("Failed to find tasks : ", e);
             throw new RuntimeException(e);
@@ -161,14 +173,14 @@ public class TaskDao {
      * @param id of existing Task
      * @return modified Task model or
      */
-    public boolean update(int id, Task updatedTask) {
+    public boolean update(int id, TaskUpdateDto dto) {
         String sql = "UPDATE tasks SET title = ?, description = ?, done = ? WHERE id = ?";
 
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)){
 
-            stmt.setString(1, updatedTask.title());
-            stmt.setString(2, updatedTask.description());
-            stmt.setBoolean(3, updatedTask.done());
+            stmt.setString(1, dto.title());
+            stmt.setString(2, dto.description());
+            stmt.setBoolean(3, dto.done());
             stmt.setInt(4, id);
             int rows = stmt.executeUpdate();
 
@@ -180,6 +192,4 @@ public class TaskDao {
             throw new RuntimeException(e);
         }
     }
-
-
 }

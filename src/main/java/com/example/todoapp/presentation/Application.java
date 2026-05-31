@@ -2,6 +2,10 @@ package com.example.todoapp.presentation;
 
 import com.example.todoapp.model.JsonUtils;
 import com.example.todoapp.model.Task;
+import com.example.todoapp.model.dto.ErrorDto;
+import com.example.todoapp.model.dto.TaskCreateDto;
+import com.example.todoapp.model.dto.TaskResponseDto;
+import com.example.todoapp.model.dto.TaskUpdateDto;
 import com.example.todoapp.persistence.TaskDao;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -39,87 +43,147 @@ public class Application {
     }
 
     private static void handleTasks(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
+        try {
+            String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
 
 
-        //region Manage POST /tasks
-        if ("POST".equals(method) && "/tasks".equals(path)) {
-            Task input = JsonUtils.deserialize(new String(exchange.getRequestBody().readAllBytes(), UTF_8), Task.class);
-            Task createdTask = dao.save(input);
+            //region Manage POST /tasks
+            if ("POST".equals(method) && "/tasks".equals(path)) {
+                TaskCreateDto dto = JsonUtils.deserialize(new String(exchange.getRequestBody().readAllBytes(), UTF_8), TaskCreateDto.class);
+                ErrorDto error = validateCreate(dto);
+                if (nonNull(error)) {
+                    sendResponse(exchange, 400, JsonUtils.serialize(error));
+                    return;
+                }
 
-            exchange.getResponseHeaders().add("Location", "/tasks/" + createdTask.id());
-            sendResponse(exchange, 201, JsonUtils.serialize(createdTask));
-            return;
-        }
-        //endregion
+                Task created = dao.save(dto);
+                TaskResponseDto response = TaskResponseDto.from(created);
 
-        //region Manage GET /tasks
-        if ("GET".equals(method) && "/tasks".equals(path)) {
-            String query = exchange.getRequestURI().getQuery();
-            boolean todoOnly = query != null && query.contains("todo-only=true");
-
-            List<Task> tasks = dao.findAll(todoOnly);
-
-            if (tasks.isEmpty()) {
-                sendResponse(exchange, 204, null);
-            } else {
-                sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+                exchange.getResponseHeaders().add("Location", "/tasks/" + response.id());
+                sendResponse(exchange, 201, JsonUtils.serialize(response));
+                return;
             }
-            return;
-        }
-        //endregion
+            //endregion
 
-        //region Manage GET /tasks/{id}
-        Matcher m = ID_PATH.matcher(path);
-        if ("GET".equals(method) && m.matches()) {
-            int id = Integer.parseInt(m.group(1));
-            Optional<Task> task = dao.findById(id);
+            //region Manage GET /tasks
+            if ("GET".equals(method) && "/tasks".equals(path)) {
+                String query = exchange.getRequestURI().getQuery();
+                boolean todoOnly = query != null && query.contains("todo-only=true");
 
-            if (task.isPresent()) {
-                sendResponse(exchange, 200, JsonUtils.serialize(task.get()));
-            } else {
-                sendResponse(exchange, 404, null);
+                List<TaskResponseDto> tasks = dao.findAll(todoOnly).stream().map(TaskResponseDto::from).toList();
+
+                if (tasks.isEmpty()) {
+                    sendResponse(exchange, 204, null);
+                } else {
+                    sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+                }
+                return;
             }
-            return;
-        }
-        //endregion
+            //endregion
 
-        //region Manage DELETE /tasks/{id}
-        if ("DELETE".equals(method) && m.matches()) {
-            int id = Integer.parseInt(m.group(1));
+            //region Manage GET /tasks/{id}
+            Matcher m = ID_PATH.matcher(path);
+            if ("GET".equals(method) && m.matches()) {
+                int id = Integer.parseInt(m.group(1));
+                Optional<Task> task = dao.findById(id);
 
-            boolean deleted = dao.deleteById(id);
-
-            if (deleted) {
-                sendResponse(exchange, 204, null);
-            } else {
-                sendResponse(exchange, 404, null);
+                if (task.isPresent()) {
+                    sendResponse(exchange, 200, JsonUtils.serialize(TaskResponseDto.from(task.get())));
+                } else {
+                    sendResponse(exchange, 404, null);
+                }
+                return;
             }
-            return;
-        }
-        //endregion
+            //endregion
 
-        //region Manage PUT /tasks/{id}
-        if ("PUT".equals(method) && m.matches()){
-            int id = Integer.parseInt(m.group(1));
-            Task input = JsonUtils.deserialize(new String(exchange.getRequestBody().readAllBytes(), UTF_8), Task.class);
+            //region Manage DELETE /tasks/{id}
+            if ("DELETE".equals(method) && m.matches()) {
+                int id = Integer.parseInt(m.group(1));
+                boolean deleted = dao.deleteById(id);
 
-            boolean updated = dao.update(id, input);
-
-            if (updated) {
-                sendResponse(exchange, 204, null);
-            } else {
-                sendResponse(exchange, 404, null);
+                if (deleted) {
+                    sendResponse(exchange, 204, null);
+                } else {
+                    sendResponse(exchange, 404, null);
+                }
+                return;
             }
-            return;
+            //endregion
+
+            //region Manage PUT /tasks/{id}
+            if ("PUT".equals(method) && m.matches()) {
+                int id = Integer.parseInt(m.group(1));
+                TaskUpdateDto dto = JsonUtils.deserialize(new String(exchange.getRequestBody().readAllBytes(), UTF_8), TaskUpdateDto.class);
+
+                ErrorDto error = validateUpdate(dto);
+                if (nonNull(error)) {
+                    sendResponse(exchange, 400, JsonUtils.serialize(error));
+                    return;
+                }
+
+                boolean updated = dao.update(id, dto);
+
+                if (updated) {
+                    sendResponse(exchange, 204, null);
+                } else {
+                    sendResponse(exchange, 404, null);
+                }
+                return;
+            }
+            //endregion
+
+            // Otherwise → 404
+            sendResponse(exchange, 404, null);
+        } catch (Exception e) {
+            log.error("Unexpected error while handling {} {}", exchange.getRequestMethod(), exchange.getRequestURI(), e);
+            try {
+                sendResponse(exchange, 500, JsonUtils.serialize(new ErrorDto("server", "An unexpected error occurred")));
+            } catch (Exception ignored){}
         }
-        //endregion
-
-
-        // Otherwise → 404
-        sendResponse(exchange, 404, null);
     }
+
+
+
+        /**
+         * Validates a {@link TaskCreateDto}.
+         * @param dto DTO to validate.
+         * @return an {@link ErrorDto} if invalid, null otherwise.
+         */
+    private static ErrorDto validateCreate(TaskCreateDto dto) {
+        if (dto.title() == null || dto.title().isBlank()) {
+            return new ErrorDto("title", "Title is required");
+        }
+        if (dto.title().length() > 50) {
+            return new ErrorDto("title", "Title must not exceed 50 characters");
+        }
+        if (dto.description() != null && dto.description().length() > 255) {
+            return new ErrorDto("description", "Description must not exceed 255 characters");
+        }
+        return null;
+    }
+
+    /**
+     * Validates a {@link TaskUpdateDto}.
+     * @param dto DTO to validate.
+     * @return an {@link ErrorDto} if invalid, null otherwise.
+     */
+    private static ErrorDto validateUpdate(TaskUpdateDto dto) {
+        if (dto.title() == null || dto.title().isBlank()) {
+            return new ErrorDto("title", "Title is required");
+        }
+        if (dto.title().length() > 50) {
+            return new ErrorDto("title", "Title must not exceed 50 characters");
+        }
+        if (dto.description() != null && dto.description().length() > 255) {
+            return new ErrorDto("description", "Description must not exceed 255 characters");
+        }
+        return null;
+    }
+
+
+
+
 
     private static void sendResponse(HttpExchange exchange, int status, String json) throws IOException {
         if(nonNull(json)) {
