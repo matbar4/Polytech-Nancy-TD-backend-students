@@ -54,21 +54,6 @@ public class Application {
         }
         //endregion
 
-        //region Manage GET /tasks/{id}
-        Matcher m = ID_PATH.matcher(path);
-        if ("GET".equals(method) && m.matches()) {
-            int id = Integer.parseInt(m.group(1));
-            Optional<Task> task = dao.findById(id);
-
-            if (task.isPresent()) {
-                sendResponse(exchange, 200, JsonUtils.serialize(task.get()));
-            } else {
-                sendResponse(exchange, 404, null);
-            }
-            return;
-        }
-        //endregion
-
         //region Manage GET /tasks
         if ("GET".equals(method) && "/tasks".equals(path)) {
             String query = exchange.getRequestURI().getQuery();
@@ -80,6 +65,21 @@ public class Application {
                 sendResponse(exchange, 204, null);
             } else {
                 sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+            }
+            return;
+        }
+        //endregion
+
+        //region Manage GET /tasks/{id}
+        Matcher m = ID_PATH.matcher(path);
+        if ("GET".equals(method) && m.matches()) {
+            int id = Integer.parseInt(m.group(1));
+            Optional<Task> task = dao.findById(id);
+
+            if (task.isPresent()) {
+                sendResponse(exchange, 200, JsonUtils.serialize(task.get()));
+            } else {
+                sendResponse(exchange, 404, null);
             }
             return;
         }
@@ -130,7 +130,7 @@ public class Application {
                 os.write(bytes);
             }
         } else {
-            exchange.sendResponseHeaders(status, 0);
+            exchange.sendResponseHeaders(status, -1);
             exchange.close();
         }
     }
